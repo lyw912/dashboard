@@ -1,9 +1,7 @@
 # Dashboard Dependencies
-dash==2.14.2
-dash-bootstrap-components==1.5.0
-plotly==5.18.0
-pandas==2.1.4
-numpy==1.24.3
-
-# Optional for deployment
-gunicorn==21.2.0  # For production deployment
+dash
+dash-bootstrap-components
+plotly
+pandas
+numpy
+gunicorn
