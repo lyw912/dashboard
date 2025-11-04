@@ -132,6 +132,35 @@ app.layout = dbc.Container([
 
     # Main content with tabs
     dbc.Tabs([
+
+        # Tab 0: Overview
+        dbc.Tab(label="🎮 Steam Game Overview", tab_id="tab-0", children=[
+            html.Div([
+                html.H3("Overview of Steam market", className="mt-4 mb-3", style={'color': COLORS['primary']}),
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Graph(id='release-density-line'), 
+                    ], md=6),
+                    dbc.Col([
+                        dcc.Graph(id='price-owners-scatter'),
+                    ], md=6),
+                ], className="mb-4"),
+                
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Graph(id='platform-pie'),
+                    ], md=4),
+                    dbc.Col([
+                        dcc.Graph(id='top-publishers-bar'),
+                    ], md=4),
+                    dbc.Col([
+                        dcc.Graph(id='genre-bubble'),
+                    ], md=4)
+
+                ], className="mb-4"),
+                
+            ])
+        ]),
         # Tab 1: Revenue Optimization
         dbc.Tab(label="💰 Revenue Optimization", tab_id="tab-1", children=[
             html.Div([
@@ -343,6 +372,305 @@ app.layout = dbc.Container([
 
 ], fluid=True, style={'backgroundColor': '#f8f9fa'})
 
+# Callbacks for Tab 0
+
+@app.callback(
+    [Output('platform-pie', 'figure'),
+     Output('price-owners-scatter', 'figure'),
+     Output('top-publishers-bar', 'figure'),
+     Output('genre-bubble', 'figure'),
+     Output('release-density-line', 'figure')],
+    Input('tabs', 'active_tab')
+)
+def update_tab1_charts(active_tab):
+
+
+    # =================== 图1：平台支持分布 ===================
+    try:
+    # 统计每个平台支持的游戏数量（去重：一个游戏支持多个平台）
+        platform_counts = games_success[['Windows', 'Mac', 'Linux']].sum()
+        total_games = len(games_success)
+
+        # 构建饼图数据
+        fig1 = go.Figure(data=[go.Pie(
+            labels=platform_counts.index,
+            values=platform_counts.values,
+            hole=0.4,  # 环形饼图，更美观
+            marker_colors=[COLORS['primary'], COLORS['warning'], COLORS['info']],
+            textinfo='label+percent',
+            textposition='inside',
+            hovertemplate=
+                '<b>%{label}</b><br>'
+                'Games: %{value:,}<br>'
+                'Share: %{percent}<extra></extra>'
+        )])
+
+        fig1.update_layout(
+            title={
+                'text': 'Platform Support Distribution',
+                'font': {'size': 14, 'color': COLORS['dark']},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
+            template='plotly_white',
+            height=420,
+            autosize=False,
+            margin=dict(l=20, r=20, t=60, b=20),
+            showlegend=False
+        )
+    except Exception as e:
+        fig1 = go.Figure().add_annotation(
+            text="Platform Data Unavailable",
+            xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False
+        )
+
+    # =================== 图2：价格 vs 拥有者散点图 ===================
+    try:
+        df2 = games_success[['Name', 'Price', 'Estimated owners (mid)']].copy()
+        df2 = df2[df2['Estimated owners (mid)'] > 0]
+
+        fig2 = px.scatter(
+            df2, 
+            x='Price', 
+            y='Estimated owners (mid)',
+            hover_name='Name',
+            log_y=True,
+            color_discrete_sequence=[COLORS['primary']]
+        )
+        fig2.update_traces(marker=dict(size=5, opacity=0.7))
+        
+        fig2.update_layout(
+            title={
+                'text': 'Price vs Estimated Owners',
+                'font': {'size': 14, 'color': COLORS['dark']},
+                'x': 0.5
+            },
+            xaxis_title='Price (USD)',
+            yaxis_title='Estimated Owners (Log Scale)',
+            template='plotly_white',
+            height=420,
+            autosize=False,
+            margin=dict(l=40, r=20, t=60, b=40),
+            showlegend=False
+        )
+    except:
+        fig2 = go.Figure().add_annotation(text="Scatter Data Unavailable", xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)
+
+    # =================== 图3：Top 10 发行商（新增） ===================
+    try:
+        # 按总拥有者数量统计发行商（使用成功游戏）
+        publisher_stats = games_success.groupby('Publishers')['Estimated owners (mid)'].sum().sort_values(ascending=False).head(10)
+        publisher_stats = publisher_stats.reset_index()
+        
+        # 格式化数字（百万单位）
+        publisher_stats['Formatted Owners'] = publisher_stats['Estimated owners (mid)'].apply(
+            lambda x: f'{x/1e6:.1f}M'
+        )
+
+        fig3 = go.Figure()
+        fig3.add_trace(go.Bar(
+            y=publisher_stats['Publishers'],
+            x=publisher_stats['Estimated owners (mid)'],
+            orientation='h',
+            marker_color=COLORS['success'],
+            text=publisher_stats['Formatted Owners'],
+            textposition='outside',
+            hovertemplate='<b>%{y}</b><br>Total Owners: %{x:,.0f}<br>' +
+                          '%{text}<extra></extra>'
+        ))
+
+        fig3.update_layout(
+            title={
+                'text': 'Top 10 Publishers by Total Estimated Owners',
+                'font': {'size': 14, 'color': COLORS['dark']},
+                'x': 0.5
+            },
+            xaxis_title='Total Estimated Owners',
+            yaxis_title='Publisher',
+            template='plotly_white',
+            height=420,
+            autosize=False,
+            margin=dict(l=200, r=20, t=60, b=40),  # l=200 给长出版社名留空间
+            showlegend=False
+        )
+    except:
+        fig3 = go.Figure().add_annotation(text="Publisher Data Unavailable", xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)
+
+
+    # =================== 图4：Genre × Owners 热力图 ===================
+    try:
+        # --- 步骤1：自动识别列名 ---
+        print("正在加载气泡图数据...")  # 调试信息
+
+        # 自动找列
+        genre_col = None
+        owner_col = None
+        appid_col = 'AppID'
+
+        for col in games_success.columns:
+            if 'genre' in col.lower():
+                genre_col = col
+            if 'owner' in col.lower():
+                owner_col = col
+
+        if not genre_col or not owner_col:
+            raise ValueError("未找到 genre 或 owner 列")
+
+        print(f"使用列: Genre='{genre_col}', Owners='{owner_col}'")
+
+        # --- 步骤2：数据清洗 ---
+        df = games[[genre_col, owner_col, appid_col]].copy()
+        df = df.dropna(subset=[genre_col, owner_col])
+        df[owner_col] = pd.to_numeric(df[owner_col], errors='coerce')
+        df = df.dropna(subset=[owner_col])
+        df = df[df[owner_col] > 0]
+
+        if df.empty:
+            raise ValueError("数据清洗后为空")
+
+        # --- 步骤3：聚合 ---
+        genre_stats = df.groupby(genre_col).agg(
+            total_owners=(owner_col, 'sum'),
+            game_count=(appid_col, 'count'),
+            avg_owners=(owner_col, 'mean')
+        ).reset_index()
+
+        # 至少 20 款游戏
+        genre_stats = genre_stats[genre_stats['game_count'] >= 20]
+
+        # 至少有 3 个类型
+        if len(genre_stats) < 3:
+            raise ValueError("有效类型少于3个")
+
+        # 取前 12 个（避免拥挤）
+        genre_stats = genre_stats.sort_values('total_owners', ascending=False).head(12)
+
+        # --- 步骤4：气泡大小 ---
+        min_total = genre_stats['total_owners'].min()
+        max_total = genre_stats['total_owners'].max()
+        if max_total == min_total:
+            genre_stats['bubble_size'] = 50
+        else:
+            genre_stats['bubble_size'] = 20 + 80 * (genre_stats['total_owners'] - min_total) / (max_total - min_total)
+
+        # --- 步骤5：绘图 ---
+        fig4 = go.Figure()
+
+        fig4.add_trace(go.Scatter(
+            x=genre_stats['game_count'],
+            y=genre_stats['avg_owners'],
+            mode='markers+text',
+            text=genre_stats[genre_col],
+            textposition='middle center',
+            textfont=dict(color='white', size=9, family='Arial'),
+            marker=dict(
+                colorscale='Viridis',
+                size=genre_stats['bubble_size'],
+                color=genre_stats['total_owners'],
+                showscale=True,
+                colorbar=dict(title="Total Owners", x=1.02),
+                line=dict(width=1, color='black')
+            ),
+            hovertemplate=
+                '<b>%{text}</b><br>'
+                'Games: %{x:,}<br>'
+                'Avg Owners: %{y:,.0f}<br>'
+                'Total: %{marker.color:,.0f}<extra></extra>'
+        ))
+
+        fig4.update_layout(
+            title={
+                'text': 'Genre Popularity Bubble Map',
+                'font': {'size': 14},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
+            xaxis_title='Number of Games',
+            yaxis_title='Avg Owners per Game',
+            xaxis=dict(type='log', tickformat=',.0f'),
+            yaxis=dict(type='log', tickformat=',.0f'),
+            template='plotly_white',
+            height=420,
+            autosize=False,
+            margin=dict(l=50, r=120, t=60, b=50),
+            showlegend=False
+        )
+
+        print(f"气泡图成功生成！共 {len(genre_stats)} 个类型")
+
+    except Exception as e:
+        print(f"气泡图失败: {str(e)}")
+        fig4 = go.Figure()
+        fig4.add_annotation(
+            text=f"Bubble Map Error<br>{str(e)}",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5,
+            showarrow=False,
+            font=dict(size=12),
+            bgcolor="rgba(255,0,0,0.1)"
+        )
+        # =================== 图5：游戏发行密度折线图 ===================
+    try:
+        # 按年统计游戏数量
+        yearly_releases = games.groupby('Release year').size().reset_index(name='Game Count')
+        yearly_releases = yearly_releases[
+            (yearly_releases['Release year'] >= 2010) & 
+            (yearly_releases['Release year'] <= 2024)
+        ].copy()
+        yearly_releases['Release year'] = yearly_releases['Release year'].astype(int)
+
+        fig5 = go.Figure()
+
+        # 主折线
+        fig5.add_trace(go.Scatter(
+            x=yearly_releases['Release year'],
+            y=yearly_releases['Game Count'],
+            mode='lines+markers',
+            name='Releases',
+            line=dict(color=COLORS['primary'], width=3),
+            marker=dict(size=6),
+            fill='tozeroy',
+            fillcolor='rgba(31, 119, 180, 0.2)',
+            hovertemplate=
+                '<b>Year:</b> %{x}<br>'
+                '<b>Games Released:</b> %{y:,}<extra></extra>'
+        ))
+
+        # 可选：添加峰值标注
+        peak_year = yearly_releases.loc[yearly_releases['Game Count'].idxmax()]
+        fig5.add_annotation(
+            x=peak_year['Release year'],
+            y=peak_year['Game Count'],
+            text=f"Peak: {peak_year['Game Count']:,}",
+            showarrow=True,
+            arrowhead=2,
+            ax=20, ay=-30,
+            bgcolor="white",
+            bordercolor=COLORS['primary'],
+            borderwidth=1
+        )
+
+        fig5.update_layout(
+            title={
+                'text': 'Game Release Trend (2010-2024)',
+                'font': {'size': 14, 'color': COLORS['dark']},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
+            xaxis_title='Year',
+            yaxis_title='Number of Games Released',
+            template='plotly_white',
+            height=420,
+            autosize=False,
+            margin=dict(l=40, r=20, t=60, b=40),
+            hovermode='x unified'
+        )
+    except Exception as e:
+        fig5 = go.Figure().add_annotation(
+            text="Release Data Unavailable",
+            xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False
+        )
+    return fig1, fig2, fig3, fig4, fig5
 
 # Callbacks for Tab 1
 @app.callback(
@@ -836,4 +1164,4 @@ def update_tab3_charts(min_games):
 # Run the app
 if __name__ == '__main__':
     print("Starting dashboard at http://127.0.0.1:8050/")
-    app.run_server(debug=False, host='127.0.0.1', port=8050)
+    app.run(debug=False, host='127.0.0.1', port=8050)
