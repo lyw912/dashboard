@@ -168,10 +168,35 @@ app.layout = dbc.Container([
     dbc.Tabs([
 
         # Tab 0: Overview
-        dbc.Tab(label="🎮 Steam Game Overview", tab_id="tab-0", 
-                label_style={'color': COLORS['light']}, 
-                active_label_style={'backgroundColor': COLORS['primary'], 'color': COLORS['dark']},
-                children=[
+        dbc.Tab(label="🎮 Steam Game Overview", tab_id="tab-0", children=[
+            html.Div([
+                html.H3("Overview of Steam market", className="mt-4 mb-3", style={'color': COLORS['primary']}),
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Graph(id='release-density-line'), 
+                    ], md=6),
+                    dbc.Col([
+                        dcc.Graph(id='price-owners-scatter'),
+                    ], md=6),
+                ], className="mb-4"),
+                
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Graph(id='platform-pie'),
+                    ], md=4),
+                    dbc.Col([
+                        dcc.Graph(id='top-publishers-bar'),
+                    ], md=4),
+                    dbc.Col([
+                        dcc.Graph(id='genre-bubble'),
+                    ], md=4)
+
+                ], className="mb-4"),
+                
+            ])
+        ]),
+        # Tab 1: Revenue Optimization
+        dbc.Tab(label="💰 Revenue Optimization", tab_id="tab-1", children=[
             html.Div([
                 html.H3("Overview of Steam market", className="mt-4 mb-3", style={'color': COLORS['primary'], 'textAlign': 'center'}),
                 dbc.Row([
@@ -462,6 +487,7 @@ def update_tab1_charts(active_tab):
         fig1.update_layout(
             title={
                 'text': 'Platform Support Distribution',
+<<<<<<< HEAD
                 'font': {'size': 14, 'color': COLORS['light']},
                 'x': 0.5,
                 'xanchor': 'center'
@@ -470,6 +496,13 @@ def update_tab1_charts(active_tab):
             paper_bgcolor=COLORS['dark'],
             plot_bgcolor=COLORS['bg_dark'],
             font={'color': COLORS['light']},
+=======
+                'font': {'size': 14, 'color': COLORS['dark']},
+                'x': 0.5,
+                'xanchor': 'center'
+            },
+            template='plotly_white',
+>>>>>>> ddf81cc747923fef48034ea6a1ac4f3039596432
             height=420,
             autosize=False,
             margin=dict(l=20, r=20, t=60, b=20),
@@ -496,15 +529,26 @@ def update_tab1_charts(active_tab):
         )
         fig2.update_traces(marker=dict(size=5, opacity=0.7))
         
+<<<<<<< HEAD
         apply_steam_theme(fig2)
         fig2.update_layout(
             title={
                 'text': 'Price vs Estimated Owners',
                 'font': {'size': 14},
+=======
+        fig2.update_layout(
+            title={
+                'text': 'Price vs Estimated Owners',
+                'font': {'size': 14, 'color': COLORS['dark']},
+>>>>>>> ddf81cc747923fef48034ea6a1ac4f3039596432
                 'x': 0.5
             },
             xaxis_title='Price (USD)',
             yaxis_title='Estimated Owners (Log Scale)',
+<<<<<<< HEAD
+=======
+            template='plotly_white',
+>>>>>>> ddf81cc747923fef48034ea6a1ac4f3039596432
             height=420,
             autosize=False,
             margin=dict(l=40, r=20, t=60, b=40),
@@ -536,15 +580,26 @@ def update_tab1_charts(active_tab):
                           '%{text}<extra></extra>'
         ))
 
+<<<<<<< HEAD
         apply_steam_theme(fig3)
         fig3.update_layout(
             title={
                 'text': 'Top 10 Publishers by Total Estimated Owners',
                 'font': {'size': 14},
+=======
+        fig3.update_layout(
+            title={
+                'text': 'Top 10 Publishers by Total Estimated Owners',
+                'font': {'size': 14, 'color': COLORS['dark']},
+>>>>>>> ddf81cc747923fef48034ea6a1ac4f3039596432
                 'x': 0.5
             },
             xaxis_title='Total Estimated Owners',
             yaxis_title='Publisher',
+<<<<<<< HEAD
+=======
+            template='plotly_white',
+>>>>>>> ddf81cc747923fef48034ea6a1ac4f3039596432
             height=420,
             autosize=False,
             margin=dict(l=200, r=20, t=60, b=40),  # l=200 给长出版社名留空间
@@ -635,7 +690,10 @@ def update_tab1_charts(active_tab):
                 'Total: %{marker.color:,.0f}<extra></extra>'
         ))
 
+<<<<<<< HEAD
         apply_steam_theme(fig4)
+=======
+>>>>>>> ddf81cc747923fef48034ea6a1ac4f3039596432
         fig4.update_layout(
             title={
                 'text': 'Genre Popularity Bubble Map',
@@ -647,6 +705,10 @@ def update_tab1_charts(active_tab):
             yaxis_title='Avg Owners per Game',
             xaxis=dict(type='log', tickformat=',.0f'),
             yaxis=dict(type='log', tickformat=',.0f'),
+<<<<<<< HEAD
+=======
+            template='plotly_white',
+>>>>>>> ddf81cc747923fef48034ea6a1ac4f3039596432
             height=420,
             autosize=False,
             margin=dict(l=50, r=120, t=60, b=50),
@@ -707,16 +769,27 @@ def update_tab1_charts(active_tab):
             borderwidth=1
         )
 
+<<<<<<< HEAD
         apply_steam_theme(fig5)
         fig5.update_layout(
             title={
                 'text': 'Game Release Trend (2010-2024)',
                 'font': {'size': 14},
+=======
+        fig5.update_layout(
+            title={
+                'text': 'Game Release Trend (2010-2024)',
+                'font': {'size': 14, 'color': COLORS['dark']},
+>>>>>>> ddf81cc747923fef48034ea6a1ac4f3039596432
                 'x': 0.5,
                 'xanchor': 'center'
             },
             xaxis_title='Year',
             yaxis_title='Number of Games Released',
+<<<<<<< HEAD
+=======
+            template='plotly_white',
+>>>>>>> ddf81cc747923fef48034ea6a1ac4f3039596432
             height=420,
             autosize=False,
             margin=dict(l=40, r=20, t=60, b=40),
