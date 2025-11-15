@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(mhw_analysis_output.txt)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

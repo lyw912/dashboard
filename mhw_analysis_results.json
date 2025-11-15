@@ -1,0 +1,51 @@
+{
+  "mhw_info": {
+    "name": "Monster Hunter: World",
+    "appid": 582010,
+    "price": 29.99,
+    "dlc_count": 200,
+    "owners": 15000000.0,
+    "positive_rate": 0.8553756442383006,
+    "total_reviews": 358757,
+    "peak_ccu": 24736,
+    "avg_playtime_hours": 178.61666666666667
+  },
+  "strategy_comparison": {
+    "低价+高DLC (MHW模式)": {
+      "count": 44,
+      "avg_owners": 1966250.0,
+      "avg_rating": 0.8293739347738786,
+      "avg_dlc": 145.45454545454547
+    },
+    "中价+中DLC": {
+      "count": 96,
+      "avg_owners": 1064375.0,
+      "avg_rating": 0.7986026565798964,
+      "avg_dlc": 8.427083333333334
+    },
+    "高价+低DLC": {
+      "count": 364,
+      "avg_owners": 735398.3516483516,
+      "avg_rating": 0.7833477079648136,
+      "avg_dlc": 1.3269230769230769
+    }
+  },
+  "comparison_games": [
+    [
+      "ARK: Survival Evolved",
+      346110
+    ],
+    [
+      "Cities: Skylines",
+      255710
+    ],
+    [
+      "Beat Saber",
+      620980
+    ],
+    [
+      "Dying Light",
+      239140
+    ]
+  ]
+}
